@@ -1,24 +1,41 @@
-import { PersonFilter } from '../../types';
-import { schedule } from '../../data/schedule';
-import { getResult } from '../../data/results';
+import { Match, PersonFilter } from '../../types';
 import { getTeamsForPerson } from '../../data/entrants';
 import { TeamName } from '../common/TeamName';
 import { formatDate, isMatchPast, isToday } from '../../utils/dates';
 
 interface CalendarViewProps {
   filter: PersonFilter;
+  matches: Match[];
 }
 
-export function CalendarView({ filter }: CalendarViewProps) {
+const ROUND_LABELS: Record<string, string> = {
+  'final': 'Final',
+  'group': 'Group',
+  'quarter-final': 'QF',
+  'round-of-16': 'R16',
+  'round-of-32': 'R32',
+  'semi-final': 'SF',
+  'third-place': '3rd',
+};
+
+function getRoundBadge(match: Match): string {
+  if (match.round === 'group' && match.group) {
+    return `Grp ${match.group}`;
+  }
+  return ROUND_LABELS[match.round] ?? match.round;
+}
+
+export function CalendarView({ filter, matches }: CalendarViewProps) {
   const personTeams = filter.person ? getTeamsForPerson(filter.person).map((e) => e.country) : [];
 
-  const matches = filter.person && filter.mode === 'filter'
-    ? schedule.filter(
-        (m) => personTeams.includes(m.homeTeam) || personTeams.includes(m.awayTeam)
-      )
-    : schedule;
+  const filtered =
+    filter.person && filter.mode === 'filter'
+      ? matches.filter(
+          (m) => personTeams.includes(m.homeTeam) || personTeams.includes(m.awayTeam)
+        )
+      : matches;
 
-  const sorted = [...matches].sort((a, b) => {
+  const sorted = [...filtered].sort((a, b) => {
     const dateCompare = a.date.localeCompare(b.date);
     return dateCompare !== 0 ? dateCompare : a.time.localeCompare(b.time);
   });
@@ -45,31 +62,45 @@ export function CalendarView({ filter }: CalendarViewProps) {
             </h3>
             <div className="space-y-2">
               {dayMatches.map((match) => {
-                const result = getResult(match.id);
+                const hasScore = match.homeScore != null;
                 const matchPast = isMatchPast(match.date, match.time);
+                const isTbd = match.homeTeam === 'TBD';
 
                 return (
                   <div
-                    className={`flex items-center gap-4 rounded-lg bg-gray-800 px-4 py-3 ${
+                    className={`flex items-center gap-3 rounded-lg bg-gray-800 px-4 py-3 ${
                       matchPast ? 'opacity-70' : ''
                     }`}
                     key={match.id}
                   >
-                    <span className="w-14 text-sm text-gray-400">{match.time}</span>
-                    <div className="flex flex-1 items-center gap-2">
-                      <TeamName
-                        country={match.homeTeam}
-                        highlightPerson={filter.mode === 'highlight' ? filter.person : null}
-                      />
-                      <span className="mx-2 font-mono">
-                        {result ? `${result.homeScore} - ${result.awayScore}` : 'v'}
-                      </span>
-                      <TeamName
-                        country={match.awayTeam}
-                        highlightPerson={filter.mode === 'highlight' ? filter.person : null}
-                      />
+                    <span className="w-12 shrink-0 text-sm text-gray-400">{match.time}</span>
+                    <span className="w-12 shrink-0 rounded bg-gray-700 px-1.5 py-0.5 text-center text-xs text-gray-300">
+                      {getRoundBadge(match)}
+                    </span>
+                    <div className="flex flex-1 items-center gap-1 overflow-hidden">
+                      {isTbd ? (
+                        <span className="truncate text-sm text-gray-400">
+                          {match.description ?? 'TBD v TBD'}
+                        </span>
+                      ) : (
+                        <>
+                          <TeamName
+                            country={match.homeTeam}
+                            highlightPerson={filter.mode === 'highlight' ? filter.person : null}
+                          />
+                          <span className="mx-1 shrink-0 font-mono text-sm">
+                            {hasScore ? `${match.homeScore} - ${match.awayScore}` : 'v'}
+                          </span>
+                          <TeamName
+                            country={match.awayTeam}
+                            highlightPerson={filter.mode === 'highlight' ? filter.person : null}
+                          />
+                        </>
+                      )}
                     </div>
-                    <span className="hidden text-xs text-gray-500 sm:block">{match.location}</span>
+                    <span className="hidden shrink-0 text-xs text-gray-500 lg:block">
+                      {match.location}
+                    </span>
                   </div>
                 );
               })}

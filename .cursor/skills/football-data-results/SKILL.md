@@ -1,59 +1,48 @@
 ---
 name: football-data-results
 description: >-
-  Fetch FIFA World Cup 2026 match results from the football-data.org API and
-  update the local results data file. Use when the user asks to update scores,
-  fetch results, sync match data, check latest results, or mentions
-  football-data.org.
+  Fetch FIFA World Cup 2026 match results from the football-data.org API
+  directly in the web app (client-side). Use when the user asks to update
+  scores, fetch results, sync match data, integrate the API, check latest
+  results, or mentions football-data.org.
 ---
 
-# Fetch Results from football-data.org
+# Fetching Results from football-data.org (Client-Side)
 
-## API Authentication
+The web app fetches results directly from the football-data.org API at runtime. The API key is exposed in the client bundle — this is accepted.
+
+## API Details
 
 - **Base URL**: `https://api.football-data.org/v4`
-- **Auth header**: `X-Auth-Token: 9c9b98a30ae744d29f97ce54416dc6cc`
+- **Auth header**: `X-Auth-Token` — value defined in `src/utils/api.ts` (client-exposed; do not duplicate in docs)
 - **Competition code**: `WC` (FIFA World Cup)
+- **CORS**: The API supports CORS for browser requests
 
 ## Rate Limiting
 
-The free tier is rate-limited. Check these response headers and back off accordingly:
+Free tier: 10 requests/minute. Check response headers:
 
 | Header | Meaning |
 |--------|---------|
 | `X-Requests-Available-Minute` | Remaining requests this minute |
-| `X-RequestCounter-Reset` | Seconds until the counter resets |
+| `X-RequestCounter-Reset` | Seconds until counter resets |
 
-If a request returns HTTP 429, wait for the reset period before retrying.
+If a request returns HTTP 429, wait for reset. The app should cache responses (in memory or localStorage) and avoid re-fetching within a reasonable interval (e.g. 60 seconds).
 
-## Fetching Match Results
+## Endpoints to Use
 
-### All matches for the competition
+### Matches (scores and schedule)
 
-```bash
-curl -s 'https://api.football-data.org/v4/competitions/WC/matches?season=2026' \
-  -H 'X-Auth-Token: 9c9b98a30ae744d29f97ce54416dc6cc'
+```
+GET /v4/competitions/WC/matches?season=2026
+GET /v4/competitions/WC/matches?season=2026&status=FINISHED
+GET /v4/competitions/WC/matches?season=2026&dateFrom=YYYY-MM-DD&dateTo=YYYY-MM-DD
 ```
 
-### Filter by status (only finished matches)
+### Standings (group tables)
 
-```bash
-curl -s 'https://api.football-data.org/v4/competitions/WC/matches?season=2026&status=FINISHED' \
-  -H 'X-Auth-Token: 9c9b98a30ae744d29f97ce54416dc6cc'
 ```
-
-### Filter by date range
-
-```bash
-curl -s 'https://api.football-data.org/v4/competitions/WC/matches?season=2026&dateFrom=2026-06-11&dateTo=2026-06-15' \
-  -H 'X-Auth-Token: 9c9b98a30ae744d29f97ce54416dc6cc'
-```
-
-### Standings
-
-```bash
-curl -s 'https://api.football-data.org/v4/competitions/WC/standings?season=2026' \
-  -H 'X-Auth-Token: 9c9b98a30ae744d29f97ce54416dc6cc'
+GET /v4/competitions/WC/standings?season=2026
 ```
 
 ## API Response Shape (match object)
@@ -77,46 +66,9 @@ curl -s 'https://api.football-data.org/v4/competitions/WC/standings?season=2026'
 ```
 
 Key fields:
-- `status`: `SCHEDULED`, `TIMED`, `IN_PLAY`, `PAUSED`, `FINISHED`, `POSTPONED`, `CANCELLED`
-- `stage`: `GROUP_STAGE`, `LAST_32`, `LAST_16`, `QUARTER_FINALS`, `SEMI_FINALS`, `THIRD_PLACE`, `FINAL`
+- `status`: `SCHEDULED` | `TIMED` | `IN_PLAY` | `PAUSED` | `FINISHED` | `POSTPONED` | `CANCELLED`
+- `stage`: `GROUP_STAGE` | `LAST_32` | `LAST_16` | `QUARTER_FINALS` | `SEMI_FINALS` | `THIRD_PLACE` | `FINAL`
 - `score.fullTime.home` / `score.fullTime.away`: final scores (null if not yet played)
-
-## Mapping API Data to Project Format
-
-The project stores results in `src/data/results.ts` as:
-
-```typescript
-export interface MatchResult {
-  awayScore: number;
-  homeScore: number;
-  matchId: string;
-}
-```
-
-The `matchId` comes from `data/schedule.json` where matches have a numeric `match` field (1–104). Match the API response to the local schedule by comparing **team names** and **date** (or kickoff time).
-
-### Team Name Mapping
-
-The API may return names that differ from the project's canonical names. Apply these corrections:
-
-| API returns | Project uses |
-|-------------|--------------|
-| Türkiye | Turkey |
-| Côte d'Ivoire | Ivory Coast |
-| IR Iran | Iran |
-| Cape Verde | Cabo Verde |
-| United States | USA |
-
-Other names (Korea Republic, Bosnia and Herzegovina, etc.) should match as-is.
-
-## Workflow
-
-1. **Fetch finished matches** from the API (use `status=FINISHED` filter)
-2. **Match each API result** to a local schedule entry by comparing home/away team names and date
-3. **Extract scores** from `score.fullTime.home` and `score.fullTime.away`
-4. **Build the `matchId`** using the schedule's `match` field (e.g. match 1 → matchId `"1"`) — check `data/schedule.json` for the numeric match identifiers. The `src/data/schedule.ts` uses letter-based IDs like `"A1"` — use whichever format `results.ts` is currently referencing.
-5. **Update `src/data/results.ts`** — append new `MatchResult` entries to the `results` array, keeping entries sorted by `matchId`
-6. **Do NOT overwrite existing results** unless scores have changed (e.g. corrected after review)
 
 ## Stage Mapping
 
@@ -130,8 +82,42 @@ Other names (Korea Republic, Bosnia and Herzegovina, etc.) should match as-is.
 | THIRD_PLACE | third-place |
 | FINAL | final |
 
-## Error Handling
+## Team Names
 
-- If the API returns an error or the competition is not yet available, report clearly and fall back to manual entry
-- If a match cannot be mapped to the local schedule (name mismatch), flag it for manual review rather than silently skipping
-- Always show the user what was updated (match, teams, score)
+The project uses football-data.org canonical team names throughout all data files. No name mapping is needed — API response names match local data directly.
+
+Reference names that differ from common usage:
+- "Bosnia-Herzegovina" (not "Bosnia and Herzegovina")
+- "Cape Verde Islands" (not "Cabo Verde")
+- "South Korea" (not "Korea Republic")
+- "United States" (not "USA")
+- "Ivory Coast" (not "Côte d'Ivoire")
+- "Iran" (not "IR Iran")
+
+## Implementation Guidance
+
+### API Client Module
+
+Create/maintain a module at `src/utils/api.ts` (or similar) that:
+
+1. Wraps fetch calls with the auth header
+2. Caches responses in memory with a TTL (e.g. 60s)
+3. Handles 429 rate limiting with exponential backoff
+4. Falls back gracefully to local static data if the API is unavailable
+
+### Merging API Data with Local Schedule
+
+Match API results to the local schedule (`data/schedule.json`) by comparing team names and UTC kick-off times. The local schedule `match` field (1–104) is the canonical match ID.
+
+### Data Flow
+
+1. App loads with static data from `data/` files (entrants, groups, schedule)
+2. On mount (or on user action), fetch live results from football-data.org
+3. Merge API scores into the match list — API is authoritative for scores
+4. If the API is unreachable, the app still works with whatever data it has
+
+### Error Handling
+
+- Network errors: show stale data, optionally display "Last updated: ..." indicator
+- 429 responses: back off, show cached data
+- Competition not yet available: fall back silently to static data

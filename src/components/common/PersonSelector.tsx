@@ -14,7 +14,9 @@ export function PersonSelector({ filter, onClear, onModeChange, onSelect }: Pers
   return (
     <div className="flex flex-wrap items-center gap-3">
       <select
+        aria-label="Select person"
         className="rounded bg-gray-800 px-3 py-1.5 text-sm text-white border border-gray-600 focus:border-gold focus:outline-none"
+        name="person-selector"
         onChange={(e) => onSelect(e.target.value || null)}
         value={filter.person ?? ''}
       >

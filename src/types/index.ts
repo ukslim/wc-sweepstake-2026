@@ -8,6 +8,8 @@ export interface Match {
   awayScore?: number;
   awayTeam: string;
   date: string;
+  description?: string;
+  group?: string;
   homeScore?: number;
   homeTeam: string;
   id: string;

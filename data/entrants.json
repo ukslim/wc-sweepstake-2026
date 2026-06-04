@@ -4,9 +4,9 @@
   { "team": "Australia", "group": "D", "person": "Ben H" },
   { "team": "Austria", "group": "J", "person": "Kel" },
   { "team": "Belgium", "group": "G", "person": "Raz" },
-  { "team": "Bosnia and Herzegovina", "group": "B", "person": "Gowtham" },
+  { "team": "Bosnia-Herzegovina", "group": "B", "person": "Gowtham" },
   { "team": "Brazil", "group": "C", "person": "Simon" },
-  { "team": "Cabo Verde", "group": "H", "person": "Phil" },
+  { "team": "Cape Verde Islands", "group": "H", "person": "Phil" },
   { "team": "Canada", "group": "B", "person": "Ian" },
   { "team": "Colombia", "group": "K", "person": "Emma" },
   { "team": "Congo DR", "group": "K", "person": "Elysia" },
@@ -25,7 +25,7 @@
   { "team": "Ivory Coast", "group": "E", "person": "Jonny S" },
   { "team": "Japan", "group": "F", "person": "Elysia" },
   { "team": "Jordan", "group": "J", "person": "Fiona" },
-  { "team": "Korea Republic", "group": "A", "person": "Andy V" },
+  { "team": "South Korea", "group": "A", "person": "Andy V" },
   { "team": "Mexico", "group": "A", "person": "Patrick" },
   { "team": "Morocco", "group": "C", "person": "Phil" },
   { "team": "Netherlands", "group": "F", "person": "Lewis" },
@@ -45,6 +45,6 @@
   { "team": "Tunisia", "group": "F", "person": "Laurie" },
   { "team": "Turkey", "group": "D", "person": "Jonathan" },
   { "team": "Uruguay", "group": "H", "person": "Andy D" },
-  { "team": "USA", "group": "D", "person": "Parm" },
+  { "team": "United States", "group": "D", "person": "Parm" },
   { "team": "Uzbekistan", "group": "K", "person": "Patrick" }
 ]

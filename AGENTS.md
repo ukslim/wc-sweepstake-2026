@@ -67,10 +67,14 @@ A `results` data structure (initially empty) records completed match scores. Eac
 
 ### Team Names
 
-Canonical names used consistently across all data files:
-- "Turkey" (not Türkiye), "Ivory Coast" (not Côte d'Ivoire), "Iran" (not IR Iran)
-- "Cabo Verde" (not Cape Verde), "Korea Republic", "Bosnia and Herzegovina"
-- "USA" (not United States)
+Team names use the canonical names from the football-data.org API. Key names that differ from common usage:
+- "Bosnia-Herzegovina" (not "Bosnia and Herzegovina")
+- "Cape Verde Islands" (not "Cabo Verde")
+- "South Korea" (not "Korea Republic")
+- "United States" (not "USA")
+- "Ivory Coast" (not "Côte d'Ivoire")
+- "Iran" (not "IR Iran")
+- "Turkey" (not "Türkiye")
 
 ## Project Structure
 
@@ -130,6 +134,35 @@ npm run deploy           # Deploy to GitHub Pages
 
 GitHub Actions workflow on push to `main` builds and deploys to GitHub Pages. The `base` in `vite.config.ts` must match the repo path (e.g., `/wc-2026/`).
 
-## API (Optional, TBD)
+## Testing
 
-If a free football results API is integrated (e.g. football-data.org), wrap in `src/utils/api.ts` with graceful fallback to local data. The app must work fully offline from any external API. If no suitable free API is found, results are updated manually via the data files.
+This app has no unit tests. Testing is done **manually by an agent** using Chrome DevTools (via the `chrome-devtools` MCP server) to inspect the running app, verify layout, check data rendering, and interact with UI elements.
+
+### Fake Data for Pre-Tournament Testing
+
+Before real results are available, the app must expose a global function on `window` to inject fake match results via the browser console. This allows an agent (or a human) to simulate tournament progress without editing source files or rebuilding.
+
+```js
+// Example browser console usage:
+window.__injectResults([
+  { matchId: 1, homeScore: 2, awayScore: 1 },
+  { matchId: 2, homeScore: 0, awayScore: 0 },
+]);
+
+// Clear all injected results:
+window.__clearResults();
+```
+
+- `window.__injectResults(results)` — merges the provided results into the app's reactive state, triggering re-renders of group tables, knockout bracket, and calendar.
+- `window.__clearResults()` — resets to the real (committed) results data.
+- These functions must be available in both dev and production builds.
+
+## API — football-data.org
+
+Match data (schedule and scores) is fetched client-side from the football-data.org v4 API. The API key is exposed in the client bundle — this is accepted (see `src/utils/api.ts`).
+
+- **Client**: `src/utils/api.ts` — `fetchMatches()` with 60s fresh cache, stale-cache fallback on errors/429, and one retry after rate-limit reset
+- **Hook**: `src/hooks/useMatches.ts` — returns `{ apiError, lastUpdated, loading, matches, scoresStale }`
+- **Caching**: localStorage key `wc2026-matches`. Fresh TTL 60 seconds; expired entries used when the API is unreachable
+- **Status UI**: `App.tsx` header shows last update time, stale-cache notice, or “schedule only” when the API fails with no cache
+- **Data flow**: `App.tsx` calls `useMatches()` and passes `matches: Match[]` to all three views. Merge order: injected console results > API scores > static schedule. Scores live on `Match` objects (`homeScore`, `awayScore`)

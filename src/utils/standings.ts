@@ -1,7 +1,6 @@
 import { GroupStanding, Match } from '../types';
-import { getResult } from '../data/results';
 
-/** Calculate group standings from the schedule and results. */
+/** Calculate group standings from matches (scores read from Match objects). */
 export function calculateStandings(groupTeams: string[], matches: Match[]): GroupStanding[] {
   const standings = new Map<string, GroupStanding>(
     groupTeams.map((team) => [
@@ -11,8 +10,7 @@ export function calculateStandings(groupTeams: string[], matches: Match[]): Grou
   );
 
   for (const match of matches) {
-    const result = getResult(match.id);
-    if (!result) continue;
+    if (match.homeScore == null || match.awayScore == null) continue;
 
     const home = standings.get(match.homeTeam);
     const away = standings.get(match.awayTeam);
@@ -20,16 +18,16 @@ export function calculateStandings(groupTeams: string[], matches: Match[]): Grou
 
     home.played++;
     away.played++;
-    home.goalsFor += result.homeScore;
-    home.goalsAgainst += result.awayScore;
-    away.goalsFor += result.awayScore;
-    away.goalsAgainst += result.homeScore;
+    home.goalsFor += match.homeScore;
+    home.goalsAgainst += match.awayScore;
+    away.goalsFor += match.awayScore;
+    away.goalsAgainst += match.homeScore;
 
-    if (result.homeScore > result.awayScore) {
+    if (match.homeScore > match.awayScore) {
       home.won++;
       home.points += 3;
       away.lost++;
-    } else if (result.homeScore < result.awayScore) {
+    } else if (match.homeScore < match.awayScore) {
       away.won++;
       away.points += 3;
       home.lost++;

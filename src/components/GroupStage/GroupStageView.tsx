@@ -1,15 +1,15 @@
 import { groups } from '../../data/groups';
-import { schedule } from '../../data/schedule';
-import { PersonFilter } from '../../types';
+import { Match, PersonFilter } from '../../types';
 import { calculateStandings } from '../../utils/standings';
 import { getTeamsForPerson } from '../../data/entrants';
 import { GroupTable } from './GroupTable';
 
 interface GroupStageViewProps {
   filter: PersonFilter;
+  matches: Match[];
 }
 
-export function GroupStageView({ filter }: GroupStageViewProps) {
+export function GroupStageView({ filter, matches }: GroupStageViewProps) {
   const personTeams = filter.person ? getTeamsForPerson(filter.person).map((e) => e.country) : [];
 
   const visibleGroups =
@@ -20,7 +20,7 @@ export function GroupStageView({ filter }: GroupStageViewProps) {
   return (
     <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
       {visibleGroups.map((group) => {
-        const groupMatches = schedule.filter(
+        const groupMatches = matches.filter(
           (m) =>
             m.round === 'group' &&
             group.teams.includes(m.homeTeam) &&
@@ -33,6 +33,7 @@ export function GroupStageView({ filter }: GroupStageViewProps) {
             groupName={group.name}
             highlightPerson={filter.mode === 'highlight' ? filter.person : null}
             key={group.name}
+            matches={groupMatches}
             standings={standings}
           />
         );
