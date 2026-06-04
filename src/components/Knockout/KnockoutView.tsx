@@ -1,4 +1,3 @@
-import { useCallback, useRef, useState } from 'react';
 import { Match, PersonFilter } from '../../types';
 import { getPersonForCountry, getTeamsForPerson } from '../../data/entrants';
 
@@ -88,10 +87,11 @@ export function KnockoutView({ filter, matches }: KnockoutViewProps) {
   const personTeams = filter.person ? getTeamsForPerson(filter.person).map((e) => e.country) : [];
 
   return (
-    <div className="space-y-4">
-      <p className="text-center text-xs text-gray-500">Drag to pan, scroll to zoom</p>
-      <PanZoomContainer>
-        <div className="relative" style={{ height: TOTAL_H, width: TOTAL_W }}>
+    <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+      <div
+        className="relative inline-block min-w-full rounded-lg border border-gray-700 bg-gray-900 p-4"
+        style={{ height: TOTAL_H, width: TOTAL_W }}
+      >
           {/* Top half */}
           <div className="absolute left-0 top-0">
             <BracketHalf
@@ -140,8 +140,7 @@ export function KnockoutView({ filter, matches }: KnockoutViewProps) {
           <svg className="pointer-events-none absolute inset-0" style={{ overflow: 'visible' }}>
             <FinalConnectors />
           </svg>
-        </div>
-      </PanZoomContainer>
+      </div>
     </div>
   );
 }
@@ -349,88 +348,6 @@ function TeamRow({
         </span>
       )}
       {score != null && <span className="ml-auto tabular-nums">{score}</span>}
-    </div>
-  );
-}
-
-/* ── Pan / Zoom container ──────────────────────────────────────────── */
-function PanZoomContainer({ children }: { children: React.ReactNode }) {
-  const [tx, setTx] = useState(0);
-  const [ty, setTy] = useState(0);
-  const [scale, setScale] = useState(1);
-  const dragging = useRef(false);
-  const last = useRef({ x: 0, y: 0 });
-  const pinchDist = useRef<number | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  const onPointerDown = useCallback((e: React.PointerEvent) => {
-    if (e.pointerType === 'touch' && e.isPrimary === false) return;
-    dragging.current = true;
-    last.current = { x: e.clientX, y: e.clientY };
-    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
-  }, []);
-
-  const onPointerMove = useCallback((e: React.PointerEvent) => {
-    if (!dragging.current) return;
-    const dx = e.clientX - last.current.x;
-    const dy = e.clientY - last.current.y;
-    last.current = { x: e.clientX, y: e.clientY };
-    setTx((t) => t + dx);
-    setTy((t) => t + dy);
-  }, []);
-
-  const onPointerUp = useCallback(() => {
-    dragging.current = false;
-  }, []);
-
-  const onWheel = useCallback((e: React.WheelEvent) => {
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? 0.9 : 1.1;
-    setScale((s) => Math.min(3, Math.max(0.3, s * delta)));
-  }, []);
-
-  const onTouchStart = useCallback((e: React.TouchEvent) => {
-    if (e.touches.length === 2) {
-      const dx = e.touches[0]!.clientX - e.touches[1]!.clientX;
-      const dy = e.touches[0]!.clientY - e.touches[1]!.clientY;
-      pinchDist.current = Math.sqrt(dx * dx + dy * dy);
-    }
-  }, []);
-
-  const onTouchMove = useCallback((e: React.TouchEvent) => {
-    if (e.touches.length === 2 && pinchDist.current != null) {
-      const dx = e.touches[0]!.clientX - e.touches[1]!.clientX;
-      const dy = e.touches[0]!.clientY - e.touches[1]!.clientY;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      const ratio = dist / pinchDist.current;
-      pinchDist.current = dist;
-      setScale((s) => Math.min(3, Math.max(0.3, s * ratio)));
-    }
-  }, []);
-
-  const onTouchEnd = useCallback(() => {
-    pinchDist.current = null;
-  }, []);
-
-  return (
-    <div
-      className="relative overflow-hidden rounded-lg border border-gray-700 bg-gray-900"
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onTouchEnd={onTouchEnd}
-      onTouchMove={onTouchMove}
-      onTouchStart={onTouchStart}
-      onWheel={onWheel}
-      ref={containerRef}
-      style={{ cursor: 'grab', height: 600, touchAction: 'none' }}
-    >
-      <div
-        className="inline-block origin-top-left p-4"
-        style={{ transform: `translate(${tx}px, ${ty}px) scale(${scale})` }}
-      >
-        {children}
-      </div>
     </div>
   );
 }
