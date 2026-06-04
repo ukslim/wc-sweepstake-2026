@@ -7,16 +7,16 @@ description: >-
   results, or mentions football-data.org.
 ---
 
-# Fetching Results from football-data.org (Client-Side)
+# Fetching Results from football-data.org (Vercel Proxy)
 
-The web app fetches results directly from the football-data.org API at runtime. The API key is exposed in the client bundle — this is accepted.
+The browser calls `/api/matches` on the same origin. A Vercel serverless function (`api/matches.ts`) proxies to football-data.org and injects `FOOTBALL_DATA_API_KEY` from the environment. The key is never in the client bundle.
 
 ## API Details
 
-- **Base URL**: `https://api.football-data.org/v4`
-- **Auth header**: `X-Auth-Token` — value defined in `src/utils/api.ts` (client-exposed; do not duplicate in docs)
+- **Browser URL**: `/api/matches` (proxied by `api/matches.ts`)
+- **Upstream**: `https://api.football-data.org/v4/competitions/WC/matches?season=2026`
+- **Auth**: `X-Auth-Token` set server-side from `FOOTBALL_DATA_API_KEY` (Vercel env / `.env.local` for Vite dev proxy)
 - **Competition code**: `WC` (FIFA World Cup)
-- **CORS**: The API supports CORS for browser requests
 
 ## Rate Limiting
 
@@ -96,14 +96,10 @@ Reference names that differ from common usage:
 
 ## Implementation Guidance
 
-### API Client Module
+### API Proxy and Client
 
-Create/maintain a module at `src/utils/api.ts` (or similar) that:
-
-1. Wraps fetch calls with the auth header
-2. Caches responses in memory with a TTL (e.g. 60s)
-3. Handles 429 rate limiting with exponential backoff
-4. Falls back gracefully to local static data if the API is unavailable
+- **`api/matches.ts`**: Vercel serverless proxy; injects `FOOTBALL_DATA_API_KEY`, handles upstream 429 retry
+- **`src/utils/api.ts`**: `fetch('/api/matches')`, localStorage cache (60s TTL), stale fallback, client 429 retry
 
 ### Merging API Data with Local Schedule
 
@@ -112,7 +108,7 @@ Match API results to the local schedule (`data/schedule.json`) by comparing team
 ### Data Flow
 
 1. App loads with static data from `data/` files (entrants, groups, schedule)
-2. On mount (or on user action), fetch live results from football-data.org
+2. On mount, fetch live results via `/api/matches`
 3. Merge API scores into the match list — API is authoritative for scores
 4. If the API is unreachable, the app still works with whatever data it has
 

@@ -4,7 +4,7 @@
 
 A static SPA tracking the FIFA World Cup 2026 sweepstake for a group of colleagues. 48 teams are assigned to people (some people paid double and have two teams). The app shows group standings, a knockout bracket, and a match calendar — always associating teams with their sweepstake owner.
 
-Deployed on GitHub Pages. No backend. May use browser localStorage for user preferences.
+Deployed on **Vercel** (static SPA + `/api/matches` serverless proxy). May use browser localStorage for user preferences and score cache.
 
 ## Tournament Format
 
@@ -19,22 +19,25 @@ Deployed on GitHub Pages. No backend. May use browser localStorage for user pref
 - **Vite** — build tool and dev server
 - **React 18** + **TypeScript**
 - **Tailwind CSS** — utility-first styling
-- **GitHub Pages** — deployment target (static `dist/`)
+- **Vercel** — deployment (static `dist/` + serverless API in `api/`)
 
 ## Tabs / Views
 
 ### Group Stage
+
 - Points table for each group (Played, Won, Drawn, Lost, GF, GA, GD, Points)
 - List of played and upcoming matches per group with scores
 - Person selection: highlight that person's rows; toggle to filter to only their groups
 
 ### Knockout Stage
+
 - **Bracket/tree chart** showing the full knockout draw from Round of 32 to Final
 - Scores shown for completed matches; TBD placeholders for future rounds
 - Must support **zoom and pan on mobile** (touch gestures) — this is non-negotiable since the bracket is too wide for a phone viewport
 - Person selection: highlight that person's team(s) path through the bracket
 
 ### Calendar
+
 - Chronological list of upcoming matches with: date, BST kick-off time, teams, venue/city, group/round
 - Person selection: filter to only matches involving that person's team(s)
 
@@ -54,6 +57,7 @@ Whenever a country team is displayed, also show the sweepstake person who owns t
 All data is **statically imported** from `src/data/` (TypeScript modules). Updating results requires editing, rebuilding, and deploying.
 
 Source JSON files live in `data/` at the project root (canonical reference data):
+
 - `data/entrants.json` — team → person + group
 - `data/groups.json` — group compositions
 - `data/schedule.json` — all 104 matches (UTC kickoff times, venues, stages)
@@ -68,6 +72,7 @@ A `results` data structure (initially empty) records completed match scores. Eac
 ### Team Names
 
 Team names use the canonical names from the football-data.org API. Key names that differ from common usage:
+
 - "Bosnia-Herzegovina" (not "Bosnia and Herzegovina")
 - "Cape Verde Islands" (not "Cabo Verde")
 - "South Korea" (not "Korea Republic")
@@ -80,6 +85,8 @@ Team names use the canonical names from the football-data.org API. Key names tha
 
 ```
 wc-2026/
+├── api/                  # Vercel serverless (football-data proxy)
+│   └── matches.ts
 ├── data/                 # Canonical JSON source data
 │   ├── entrants.json
 │   ├── groups.json
@@ -111,11 +118,12 @@ wc-2026/
 
 ```bash
 npm install              # Install dependencies
-npm run dev              # Dev server (localhost:5173)
+npm run dev              # Dev server (proxies /api/matches; needs .env.local)
 npm run build            # Production build → dist/
 npm run preview          # Preview production build locally
-npm run deploy           # Deploy to GitHub Pages
 ```
+
+Deploy via Vercel (connect repo, set Root Directory to `wc-2026`, add `FOOTBALL_DATA_API_KEY`).
 
 ## Styling
 
@@ -132,7 +140,12 @@ npm run deploy           # Deploy to GitHub Pages
 
 ## Deployment
 
-GitHub Actions workflow on push to `main` builds and deploys to GitHub Pages. The `base` in `vite.config.ts` must match the repo path (e.g., `/wc-2026/`).
+Deployed on **Vercel** (Vite SPA + serverless API). Set the Vercel project **Root Directory** to `wc-2026` if deploying from the monorepo.
+
+- **Build**: `npm run build` → `dist/`
+- **Env**: `FOOTBALL_DATA_API_KEY` in Vercel project settings (Production + Preview). Copy `.env.example` to `.env.local` for local dev.
+- **API proxy**: [`api/matches.ts`](api/matches.ts) — browser calls `/api/matches`; the function injects the auth token server-side.
+- **Local dev**: Vite proxies `/api/matches` to football-data.org using `FOOTBALL_DATA_API_KEY` from `.env.local`.
 
 ## Testing
 
@@ -159,9 +172,10 @@ window.__clearResults();
 
 ## API — football-data.org
 
-Match data (schedule and scores) is fetched client-side from the football-data.org v4 API. The API key is exposed in the client bundle — this is accepted (see `src/utils/api.ts`).
+Match scores are fetched via a **same-origin proxy** so the API key never reaches the browser.
 
-- **Client**: `src/utils/api.ts` — `fetchMatches()` with 60s fresh cache, stale-cache fallback on errors/429, and one retry after rate-limit reset
+- **Proxy**: `api/matches.ts` (Vercel serverless) — uses `FOOTBALL_DATA_API_KEY`
+- **Client**: `src/utils/api.ts` — `fetch('/api/matches')` with 60s fresh cache, stale-cache fallback on errors/429, and one retry after rate-limit reset
 - **Hook**: `src/hooks/useMatches.ts` — returns `{ apiError, lastUpdated, loading, matches, scoresStale }`
 - **Caching**: localStorage key `wc2026-matches`. Fresh TTL 60 seconds; expired entries used when the API is unreachable
 - **Status UI**: `App.tsx` header shows last update time, stale-cache notice, or “schedule only” when the API fails with no cache

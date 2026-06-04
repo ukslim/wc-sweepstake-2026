@@ -1,7 +1,7 @@
 import { Match } from '../types';
 
-const API_BASE = 'https://api.football-data.org/v4';
-const API_KEY = '9c9b98a30ae744d29f97ce54416dc6cc';
+/** Same-origin Vercel serverless proxy (see api/matches.ts). */
+const API_MATCHES_URL = '/api/matches';
 const CACHE_KEY = 'wc2026-matches';
 const CACHE_TTL_MS = 60_000;
 
@@ -111,9 +111,7 @@ function sleep(ms: number): Promise<void> {
 }
 
 async function requestMatches(retried: boolean): Promise<Match[]> {
-  const res = await fetch(`${API_BASE}/competitions/WC/matches?season=2026`, {
-    headers: { 'X-Auth-Token': API_KEY },
-  });
+  const res = await fetch(API_MATCHES_URL);
 
   if (res.status === 429 && !retried) {
     await sleep(rateLimitDelayMs(res));
