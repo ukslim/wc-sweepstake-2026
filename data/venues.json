@@ -1,0 +1,18 @@
+[
+  { "name": "Estadio Azteca", "city": "Mexico City", "country": "Mexico", "timezone": "America/Mexico_City" },
+  { "name": "Estadio Akron", "city": "Guadalajara", "country": "Mexico", "timezone": "America/Mexico_City" },
+  { "name": "Estadio BBVA", "city": "Monterrey", "country": "Mexico", "timezone": "America/Monterrey" },
+  { "name": "BMO Field", "city": "Toronto", "country": "Canada", "timezone": "America/Toronto" },
+  { "name": "BC Place", "city": "Vancouver", "country": "Canada", "timezone": "America/Vancouver" },
+  { "name": "MetLife Stadium", "city": "New York/New Jersey", "country": "USA", "timezone": "America/New_York" },
+  { "name": "SoFi Stadium", "city": "Los Angeles", "country": "USA", "timezone": "America/Los_Angeles" },
+  { "name": "Levi's Stadium", "city": "San Francisco Bay Area", "country": "USA", "timezone": "America/Los_Angeles" },
+  { "name": "Gillette Stadium", "city": "Boston", "country": "USA", "timezone": "America/New_York" },
+  { "name": "AT&T Stadium", "city": "Dallas", "country": "USA", "timezone": "America/Chicago" },
+  { "name": "NRG Stadium", "city": "Houston", "country": "USA", "timezone": "America/Chicago" },
+  { "name": "Arrowhead Stadium", "city": "Kansas City", "country": "USA", "timezone": "America/Chicago" },
+  { "name": "Hard Rock Stadium", "city": "Miami", "country": "USA", "timezone": "America/New_York" },
+  { "name": "Mercedes-Benz Stadium", "city": "Atlanta", "country": "USA", "timezone": "America/New_York" },
+  { "name": "Lincoln Financial Field", "city": "Philadelphia", "country": "USA", "timezone": "America/New_York" },
+  { "name": "Lumen Field", "city": "Seattle", "country": "USA", "timezone": "America/Los_Angeles" }
+]
