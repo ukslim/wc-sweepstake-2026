@@ -9,6 +9,7 @@ export interface UseMatchesResult {
   lastUpdated: Date | null;
   loading: boolean;
   matches: Match[];
+  scoresPreserved: boolean;
   scoresStale: boolean;
 }
 
@@ -22,6 +23,7 @@ export function useMatches(): UseMatchesResult {
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [scoresPreserved, setScoresPreserved] = useState(false);
   const [scoresStale, setScoresStale] = useState(false);
 
   useEffect(() => {
@@ -32,6 +34,7 @@ export function useMatches(): UseMatchesResult {
         if (cancelled) return;
         setApiMatches(result.matches);
         setLastUpdated(new Date(result.fetchedAt));
+        setScoresPreserved(result.preservedScores === true);
         setScoresStale(result.stale === true);
         setApiError(null);
       })
@@ -39,6 +42,7 @@ export function useMatches(): UseMatchesResult {
         if (cancelled) return;
         setApiMatches([]);
         setLastUpdated(null);
+        setScoresPreserved(false);
         setScoresStale(false);
         setApiError(
           err instanceof ApiFetchError
@@ -85,5 +89,5 @@ export function useMatches(): UseMatchesResult {
     });
   }, [apiMatches, results]);
 
-  return { apiError, lastUpdated, loading, matches, scoresStale };
+  return { apiError, lastUpdated, loading, matches, scoresPreserved, scoresStale };
 }

@@ -36,7 +36,45 @@ export interface FetchMatchesResult {
   fetchedAt: number;
   fromCache: boolean;
   matches: Match[];
+  preservedScores?: boolean;
   stale?: boolean;
+}
+
+function hasScore(m: Match): boolean {
+  return m.homeScore != null && m.awayScore != null;
+}
+
+export function matchKey(m: Match): string {
+  return `${m.homeTeam}|${m.date}`;
+}
+
+/** Keep cached scores when the API returns null fullTime values. */
+export function mergeWithCachedScores(
+  incoming: Match[],
+  previous: Match[] | null
+): { matches: Match[]; preservedScores: boolean } {
+  if (!previous) return { matches: incoming, preservedScores: false };
+
+  const cachedScores = new Map<string, Pick<Match, 'awayScore' | 'homeScore'>>();
+  for (const m of previous) {
+    if (hasScore(m)) {
+      cachedScores.set(matchKey(m), {
+        awayScore: m.awayScore!,
+        homeScore: m.homeScore!,
+      });
+    }
+  }
+
+  let preservedScores = false;
+  const matches = incoming.map((m) => {
+    if (hasScore(m)) return m;
+    const cached = cachedScores.get(matchKey(m));
+    if (!cached) return m;
+    preservedScores = true;
+    return { ...m, ...cached };
+  });
+
+  return { matches, preservedScores };
 }
 
 /** Thrown when the API request fails and no cache is available. */
@@ -126,6 +164,18 @@ async function requestMatches(retried: boolean): Promise<Match[]> {
   return parseMatches(json);
 }
 
+function readCachedMatches(maxAgeMs: number): Match[] | null {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const { data, fetchedAt } = JSON.parse(raw) as CachedResponse<Match[]>;
+    if (Date.now() - fetchedAt > maxAgeMs) return null;
+    return data;
+  } catch {
+    return null;
+  }
+}
+
 function readCache(maxAgeMs: number): FetchMatchesResult | null {
   try {
     const raw = localStorage.getItem(CACHE_KEY);
@@ -169,9 +219,16 @@ export async function fetchMatches(): Promise<FetchMatchesResult> {
   if (fresh) return fresh;
 
   try {
-    const matches = await requestMatches(false);
+    const incoming = await requestMatches(false);
+    const previous = readCachedMatches(Infinity);
+    const { matches, preservedScores } = mergeWithCachedScores(incoming, previous);
     const fetchedAt = writeCache(matches);
-    return { fetchedAt, fromCache: false, matches };
+    return {
+      fetchedAt,
+      fromCache: false,
+      matches,
+      ...(preservedScores && { preservedScores: true }),
+    };
   } catch (err) {
     const stale = staleCacheResult();
     if (stale) return stale;

@@ -12,7 +12,8 @@ import { CalendarView } from './components/Calendar/CalendarView';
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('groups');
   const { clear, filter, selectPerson, setMode } = usePersonFilter();
-  const { apiError, lastUpdated, loading, matches, scoresStale } = useMatches();
+  const { apiError, lastUpdated, loading, matches, scoresPreserved, scoresStale } =
+    useMatches();
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6">
@@ -28,7 +29,13 @@ export default function App() {
             {lastUpdated && scoresStale && (
               <>Showing cached scores from {formatDateTime(lastUpdated)}</>
             )}
-            {lastUpdated && !scoresStale && (
+            {lastUpdated && !scoresStale && scoresPreserved && (
+              <>
+                Some scores from cache — API returned incomplete data at{' '}
+                {formatDateTime(lastUpdated)}
+              </>
+            )}
+            {lastUpdated && !scoresStale && !scoresPreserved && (
               <>Scores updated {formatDateTime(lastUpdated)}</>
             )}
             {apiError && !lastUpdated && (
