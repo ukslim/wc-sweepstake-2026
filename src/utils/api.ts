@@ -3,7 +3,6 @@ import { Match } from '../types';
 /** Same-origin Vercel serverless proxy (see api/matches.ts). */
 const API_MATCHES_URL = '/api/matches';
 const CACHE_KEY = 'wc2026-matches';
-const CACHE_TTL_MS = 60_000;
 
 interface CachedResponse<T> {
   data: T;
@@ -211,13 +210,10 @@ function staleCacheResult(): FetchMatchesResult | null {
 }
 
 /**
- * Fetch all WC 2026 matches. Uses fresh localStorage cache within TTL;
- * on errors falls back to stale cache when available.
+ * Fetch all WC 2026 matches on every call. localStorage is written on success
+ * and used only as fallback when the API is unreachable.
  */
 export async function fetchMatches(): Promise<FetchMatchesResult> {
-  const fresh = readCache(CACHE_TTL_MS);
-  if (fresh) return fresh;
-
   try {
     const incoming = await requestMatches(false);
     const previous = readCachedMatches(Infinity);
