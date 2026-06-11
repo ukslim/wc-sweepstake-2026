@@ -51,7 +51,7 @@ export default async function handler(
     const upstream = await fetchUpstream(apiKey, false);
     const body = await upstream.text();
     res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+    res.setHeader('Cache-Control', 'no-store');
     res.status(upstream.status).send(body);
   } catch {
     res.status(502).json({ error: 'Upstream request failed' });
