@@ -2,6 +2,7 @@ import { Match, PersonFilter } from '../../types';
 import { getTeamsForPerson } from '../../data/entrants';
 import { TeamName } from '../common/TeamName';
 import { formatDate, isMatchPast, isToday } from '../../utils/dates';
+import { HIGHLIGHT_CONTAINER_CLASSES, isMatchHighlighted } from '../../utils/personHighlight';
 
 interface CalendarViewProps {
   filter: PersonFilter;
@@ -45,6 +46,8 @@ export function CalendarView({ filter, matches }: CalendarViewProps) {
     return acc;
   }, {});
 
+  const highlightPerson = filter.mode === 'highlight' ? filter.person : null;
+
   return (
     <div className="space-y-6">
       {Object.entries(grouped).map(([date, dayMatches]) => {
@@ -65,35 +68,38 @@ export function CalendarView({ filter, matches }: CalendarViewProps) {
                 const hasScore = match.homeScore != null;
                 const matchPast = isMatchPast(match.date, match.time);
                 const isTbd = match.homeTeam === 'TBD';
+                const highlighted = isMatchHighlighted(match, filter);
 
                 return (
                   <div
-                    className={`flex items-center gap-3 rounded-lg bg-gray-800 px-4 py-3 ${
-                      matchPast ? 'opacity-70' : ''
-                    }`}
+                    className={`flex items-start gap-3 rounded-lg bg-gray-800 px-4 py-3 ${
+                      highlighted ? HIGHLIGHT_CONTAINER_CLASSES : ''
+                    } ${matchPast ? 'opacity-70' : ''}`}
                     key={match.id}
                   >
-                    <span className="w-12 shrink-0 text-sm text-gray-400">{match.time}</span>
-                    <span className="w-12 shrink-0 rounded bg-gray-700 px-1.5 py-0.5 text-center text-xs text-gray-300">
-                      {getRoundBadge(match)}
-                    </span>
-                    <div className="flex flex-1 items-center gap-1 overflow-hidden">
+                    <div className="flex w-12 shrink-0 flex-col gap-1">
+                      <span className="text-sm text-gray-400">{match.time}</span>
+                      <span className="rounded bg-gray-700 px-1.5 py-0.5 text-center text-xs text-gray-300">
+                        {getRoundBadge(match)}
+                      </span>
+                    </div>
+                    <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-1 gap-y-0.5">
                       {isTbd ? (
-                        <span className="truncate text-sm text-gray-400">
+                        <span className="text-sm text-gray-400">
                           {match.description ?? 'TBD v TBD'}
                         </span>
                       ) : (
                         <>
                           <TeamName
                             country={match.homeTeam}
-                            highlightPerson={filter.mode === 'highlight' ? filter.person : null}
+                            highlightPerson={highlightPerson}
                           />
                           <span className="mx-1 shrink-0 font-mono text-sm">
                             {hasScore ? `${match.homeScore} - ${match.awayScore}` : 'v'}
                           </span>
                           <TeamName
                             country={match.awayTeam}
-                            highlightPerson={filter.mode === 'highlight' ? filter.person : null}
+                            highlightPerson={highlightPerson}
                           />
                         </>
                       )}

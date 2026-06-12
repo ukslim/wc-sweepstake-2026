@@ -1,17 +1,24 @@
-import { GroupStanding, Match } from '../../types';
+import { GroupStanding, Match, PersonFilter } from '../../types';
 import { TeamName } from '../common/TeamName';
 import { formatDate } from '../../utils/dates';
+import {
+  HIGHLIGHT_CONTAINER_CLASSES,
+  HIGHLIGHT_ROW_CLASSES,
+  isMatchHighlighted,
+  isTeamHighlighted,
+} from '../../utils/personHighlight';
 
 interface GroupTableProps {
+  filter: PersonFilter;
   groupName: string;
-  highlightPerson?: string | null;
   matches: Match[];
   standings: GroupStanding[];
 }
 
-export function GroupTable({ groupName, highlightPerson, matches, standings }: GroupTableProps) {
+export function GroupTable({ filter, groupName, matches, standings }: GroupTableProps) {
   const played = matches.filter((m) => m.homeScore != null);
   const upcoming = matches.filter((m) => m.homeScore == null);
+  const highlightPerson = filter.mode === 'highlight' ? filter.person : null;
 
   return (
     <div className="rounded-lg bg-gray-800 p-4">
@@ -32,24 +39,29 @@ export function GroupTable({ groupName, highlightPerson, matches, standings }: G
           </tr>
         </thead>
         <tbody>
-          {standings.map((s, i) => (
-            <tr
-              className={`border-b border-gray-700/50 ${i < 2 ? 'bg-pitch/20' : ''}`}
-              key={s.team}
-            >
-              <td className="py-2">
-                <TeamName country={s.team} highlightPerson={highlightPerson} />
-              </td>
-              <td className="text-center">{s.played}</td>
-              <td className="text-center">{s.won}</td>
-              <td className="text-center">{s.drawn}</td>
-              <td className="text-center">{s.lost}</td>
-              <td className="hidden text-center sm:table-cell">{s.goalsFor}</td>
-              <td className="hidden text-center sm:table-cell">{s.goalsAgainst}</td>
-              <td className="text-center">{s.goalsFor - s.goalsAgainst}</td>
-              <td className="text-center font-bold">{s.points}</td>
-            </tr>
-          ))}
+          {standings.map((s, i) => {
+            const highlighted = isTeamHighlighted(s.team, filter);
+            return (
+              <tr
+                className={`border-b border-gray-700/50 ${i < 2 ? 'bg-pitch/20' : ''} ${
+                  highlighted ? HIGHLIGHT_ROW_CLASSES : ''
+                }`}
+                key={s.team}
+              >
+                <td className="py-2">
+                  <TeamName country={s.team} highlightPerson={highlightPerson} />
+                </td>
+                <td className="text-center">{s.played}</td>
+                <td className="text-center">{s.won}</td>
+                <td className="text-center">{s.drawn}</td>
+                <td className="text-center">{s.lost}</td>
+                <td className="hidden text-center sm:table-cell">{s.goalsFor}</td>
+                <td className="hidden text-center sm:table-cell">{s.goalsAgainst}</td>
+                <td className="text-center">{s.goalsFor - s.goalsAgainst}</td>
+                <td className="text-center font-bold">{s.points}</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
 
@@ -60,7 +72,7 @@ export function GroupTable({ groupName, highlightPerson, matches, standings }: G
           </h4>
           <div className="space-y-1">
             {played.map((m) => (
-              <MatchRow highlightPerson={highlightPerson} key={m.id} match={m} />
+              <MatchRow filter={filter} key={m.id} match={m} />
             ))}
           </div>
         </div>
@@ -73,7 +85,7 @@ export function GroupTable({ groupName, highlightPerson, matches, standings }: G
           </h4>
           <div className="space-y-1">
             {upcoming.map((m) => (
-              <MatchRow highlightPerson={highlightPerson} key={m.id} match={m} />
+              <MatchRow filter={filter} key={m.id} match={m} />
             ))}
           </div>
         </div>
@@ -82,10 +94,17 @@ export function GroupTable({ groupName, highlightPerson, matches, standings }: G
   );
 }
 
-function MatchRow({ highlightPerson, match }: { highlightPerson?: string | null; match: Match }) {
+function MatchRow({ filter, match }: { filter: PersonFilter; match: Match }) {
   const hasScore = match.homeScore != null;
+  const highlighted = isMatchHighlighted(match, filter);
+  const highlightPerson = filter.mode === 'highlight' ? filter.person : null;
+
   return (
-    <div className="flex items-center gap-1 text-xs">
+    <div
+      className={`flex items-center gap-1 rounded text-xs ${
+        highlighted ? HIGHLIGHT_CONTAINER_CLASSES : ''
+      }`}
+    >
       <span className="w-16 shrink-0 text-gray-500">
         {formatDate(match.date).replace(/,.*/, '')} {match.time}
       </span>

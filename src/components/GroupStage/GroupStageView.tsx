@@ -30,8 +30,8 @@ export function GroupStageView({ filter, matches }: GroupStageViewProps) {
 
         return (
           <GroupTable
+            filter={filter}
             groupName={group.name}
-            highlightPerson={filter.mode === 'highlight' ? filter.person : null}
             key={group.name}
             matches={groupMatches}
             standings={standings}

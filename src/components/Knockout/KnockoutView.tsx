@@ -340,7 +340,9 @@ function TeamRow({
 }) {
   const person = getPersonForCountry(team);
   return (
-    <div className={`flex items-center gap-1 ${highlight ? 'text-gold' : ''} ${won ? 'font-bold' : ''}`}>
+    <div
+      className={`flex items-center gap-1 ${highlight ? 'rounded bg-gold/5 px-0.5 text-gold' : ''} ${won ? 'font-bold' : ''}`}
+    >
       <span className="flex-1 truncate">{team}</span>
       {person && (
         <span className={`text-[9px] ${highlight ? 'text-gold/80' : 'text-gray-500'}`}>
