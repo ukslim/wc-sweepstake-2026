@@ -1,6 +1,6 @@
 import { Match, PersonFilter } from '../../types';
-import { getTeamsForPerson } from '../../data/entrants';
-import { TeamName } from '../common/TeamName';
+import { getPersonForCountry, getTeamsForPerson } from '../../data/entrants';
+import { PersonTag } from '../common/PersonTag';
 import { formatDate, isMatchPast, isToday } from '../../utils/dates';
 import { HIGHLIGHT_CONTAINER_CLASSES, isMatchHighlighted } from '../../utils/personHighlight';
 
@@ -26,6 +26,67 @@ function getRoundBadge(match: Match): string {
   return ROUND_LABELS[match.round] ?? match.round;
 }
 
+function CalendarMatchRow({
+  highlighted,
+  highlightPerson,
+  match,
+  showPersonTags,
+}: {
+  highlighted: boolean;
+  highlightPerson: string | null;
+  match: Match;
+  showPersonTags: boolean;
+}) {
+  const hasScore = match.homeScore != null;
+  const matchPast = isMatchPast(match.date, match.time);
+  const isTbd = match.homeTeam === 'TBD';
+  const homePerson = getPersonForCountry(match.homeTeam);
+  const awayPerson = getPersonForCountry(match.awayTeam);
+
+  return (
+    <div
+      className={`grid w-full min-w-0 grid-cols-[2.25rem_minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-2 gap-y-0.5 overflow-hidden rounded-lg bg-gray-800 px-3 py-2.5 lg:grid-cols-[2.25rem_minmax(0,1fr)_auto_minmax(0,1fr)_minmax(0,1fr)] ${
+        highlighted ? HIGHLIGHT_CONTAINER_CLASSES : ''
+      } ${matchPast ? 'opacity-70' : ''}`}
+    >
+      <span className="col-start-1 row-start-1 text-xs tabular-nums text-gray-400">{match.time}</span>
+      {isTbd ? (
+        <span className="col-span-3 col-start-2 row-start-1 min-w-0 truncate text-xs text-gray-400 lg:col-span-4">
+          {match.description ?? 'TBD v TBD'}
+        </span>
+      ) : (
+        <>
+          <span className="col-start-2 row-start-1 min-w-0 truncate text-right text-xs font-medium">
+            {match.homeTeam}
+          </span>
+          <span className="col-start-3 row-span-2 row-start-1 shrink-0 self-center px-1 font-mono text-sm font-semibold text-gray-100">
+            {hasScore ? `${match.homeScore}-${match.awayScore}` : 'v'}
+          </span>
+          <span className="col-start-4 row-start-1 min-w-0 truncate text-left text-xs font-medium">
+            {match.awayTeam}
+          </span>
+        </>
+      )}
+      <span className="col-start-1 row-start-2 rounded bg-gray-700 px-1 py-0.5 text-center text-[10px] leading-tight text-gray-300">
+        {getRoundBadge(match)}
+      </span>
+      {!isTbd && showPersonTags && homePerson && (
+        <span className="col-start-2 row-start-2 flex min-w-0 justify-end overflow-hidden">
+          <PersonTag highlighted={highlightPerson === homePerson} name={homePerson} />
+        </span>
+      )}
+      {!isTbd && showPersonTags && awayPerson && (
+        <span className="col-start-4 row-start-2 min-w-0 overflow-hidden">
+          <PersonTag highlighted={highlightPerson === awayPerson} name={awayPerson} />
+        </span>
+      )}
+      <span className="hidden min-w-0 truncate text-right text-xs text-gray-500 lg:col-start-5 lg:row-span-2 lg:row-start-1 lg:block lg:self-center">
+        {match.location}
+      </span>
+    </div>
+  );
+}
+
 export function CalendarView({ filter, matches }: CalendarViewProps) {
   const personTeams = filter.person ? getTeamsForPerson(filter.person).map((e) => e.country) : [];
 
@@ -47,6 +108,7 @@ export function CalendarView({ filter, matches }: CalendarViewProps) {
   }, {});
 
   const highlightPerson = filter.mode === 'highlight' ? filter.person : null;
+  const showPersonTags = !(filter.person && filter.mode === 'filter');
 
   return (
     <div className="space-y-6">
@@ -63,53 +125,16 @@ export function CalendarView({ filter, matches }: CalendarViewProps) {
             >
               {formatDate(date)} {today && '— Today'}
             </h3>
-            <div className="space-y-2">
-              {dayMatches.map((match) => {
-                const hasScore = match.homeScore != null;
-                const matchPast = isMatchPast(match.date, match.time);
-                const isTbd = match.homeTeam === 'TBD';
-                const highlighted = isMatchHighlighted(match, filter);
-
-                return (
-                  <div
-                    className={`flex items-start gap-3 rounded-lg bg-gray-800 px-4 py-3 ${
-                      highlighted ? HIGHLIGHT_CONTAINER_CLASSES : ''
-                    } ${matchPast ? 'opacity-70' : ''}`}
-                    key={match.id}
-                  >
-                    <div className="flex w-12 shrink-0 flex-col gap-1">
-                      <span className="text-sm text-gray-400">{match.time}</span>
-                      <span className="rounded bg-gray-700 px-1.5 py-0.5 text-center text-xs text-gray-300">
-                        {getRoundBadge(match)}
-                      </span>
-                    </div>
-                    <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-1 gap-y-0.5">
-                      {isTbd ? (
-                        <span className="text-sm text-gray-400">
-                          {match.description ?? 'TBD v TBD'}
-                        </span>
-                      ) : (
-                        <>
-                          <TeamName
-                            country={match.homeTeam}
-                            highlightPerson={highlightPerson}
-                          />
-                          <span className="mx-1 shrink-0 font-mono text-sm">
-                            {hasScore ? `${match.homeScore} - ${match.awayScore}` : 'v'}
-                          </span>
-                          <TeamName
-                            country={match.awayTeam}
-                            highlightPerson={highlightPerson}
-                          />
-                        </>
-                      )}
-                    </div>
-                    <span className="hidden shrink-0 text-xs text-gray-500 lg:block">
-                      {match.location}
-                    </span>
-                  </div>
-                );
-              })}
+            <div className="flex flex-col gap-2">
+              {dayMatches.map((match) => (
+                <CalendarMatchRow
+                  highlighted={isMatchHighlighted(match, filter)}
+                  highlightPerson={highlightPerson}
+                  key={match.id}
+                  match={match}
+                  showPersonTags={showPersonTags}
+                />
+              ))}
             </div>
           </div>
         );
