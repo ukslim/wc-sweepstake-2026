@@ -45,7 +45,7 @@ function CalendarMatchRow({
 
   return (
     <div
-      className={`grid w-full min-w-0 grid-cols-[2.25rem_minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-2 gap-y-0.5 overflow-hidden rounded-lg bg-gray-800 px-3 py-2.5 lg:grid-cols-[2.25rem_minmax(0,1fr)_auto_minmax(0,1fr)_minmax(0,1fr)] ${
+      className={`grid w-full min-w-0 grid-cols-[2.25rem_minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-2 gap-y-0.5 overflow-hidden rounded-lg bg-gray-800 px-3 py-2.5 lg:grid-cols-[2.25rem_minmax(0,1fr)_auto_minmax(0,1fr)_minmax(0,1fr)] lg:rounded-none lg:border-b lg:border-gray-700/50 lg:bg-transparent lg:last:border-b-0 ${
         highlighted ? HIGHLIGHT_CONTAINER_CLASSES : ''
       } ${matchPast ? 'opacity-70' : ''}`}
     >
@@ -80,8 +80,9 @@ function CalendarMatchRow({
           <PersonTag highlighted={highlightPerson === awayPerson} name={awayPerson} />
         </span>
       )}
-      <span className="hidden min-w-0 truncate text-right text-xs text-gray-500 lg:col-start-5 lg:row-span-2 lg:row-start-1 lg:block lg:self-center">
-        {match.location}
+      <span className="hidden min-w-0 text-right text-xs leading-tight text-gray-500 lg:col-start-5 lg:row-span-2 lg:row-start-1 lg:block lg:self-center">
+        <span className="block truncate">{match.venue}</span>
+        {match.city && <span className="block truncate text-gray-600">{match.city}</span>}
       </span>
     </div>
   );
@@ -111,7 +112,7 @@ export function CalendarView({ filter, matches }: CalendarViewProps) {
   const showPersonTags = !(filter.person && filter.mode === 'filter');
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 lg:max-w-lg">
       {Object.entries(grouped).map(([date, dayMatches]) => {
         const past = isMatchPast(date, '23:59');
         const today = isToday(date);
@@ -125,7 +126,7 @@ export function CalendarView({ filter, matches }: CalendarViewProps) {
             >
               {formatDate(date)} {today && '— Today'}
             </h3>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 lg:gap-0 lg:overflow-hidden lg:rounded-lg lg:border lg:border-gray-700/80 lg:bg-gray-800">
               {dayMatches.map((match) => (
                 <CalendarMatchRow
                   highlighted={isMatchHighlighted(match, filter)}

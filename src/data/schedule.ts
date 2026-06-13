@@ -21,7 +21,8 @@ export const schedule: Match[] = rawSchedule.map((raw) => {
     ...(raw.group ? { group: raw.group } : {}),
     homeTeam: raw.home ?? 'TBD',
     id: String(raw.match),
-    location: `${raw.venue}, ${raw.city}`,
+    venue: raw.venue,
+    city: raw.city,
     round: raw.stage as Match['round'],
     time,
   };

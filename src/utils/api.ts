@@ -107,19 +107,30 @@ function utcToBst(utcDateStr: string): { date: string; time: string } {
   };
 }
 
+function parseVenue(venueStr: string): { city: string; venue: string } {
+  const commaIdx = venueStr.indexOf(', ');
+  if (commaIdx >= 0) {
+    return { venue: venueStr.slice(0, commaIdx), city: venueStr.slice(commaIdx + 2) };
+  }
+  return { venue: venueStr, city: '' };
+}
+
 function toMatch(api: ApiMatch): Match {
   const { date, time } = utcToBst(api.utcDate);
   const hasScore = api.score.fullTime.home != null && api.score.fullTime.away != null;
+  const venueStr = typeof api.venue === 'string' ? api.venue : '';
+  const { city, venue } = parseVenue(venueStr);
   return {
     ...(hasScore && {
       awayScore: api.score.fullTime.away!,
       homeScore: api.score.fullTime.home!,
     }),
     awayTeam: api.awayTeam.name,
+    city,
     date,
     homeTeam: api.homeTeam.name,
     id: String(api.id),
-    location: typeof api.venue === 'string' ? api.venue : '',
+    venue,
     round: STAGE_MAP[api.stage] ?? 'group',
     time,
   };
