@@ -1,6 +1,6 @@
 import { GroupStanding, Match, PersonFilter } from '../../types';
-import { TeamName } from '../common/TeamName';
-import { formatDate } from '../../utils/dates';
+import { getPersonForCountry } from '../../data/entrants';
+import { PersonTag } from '../common/PersonTag';
 import {
   HIGHLIGHT_CONTAINER_CLASSES,
   HIGHLIGHT_ROW_CLASSES,
@@ -41,6 +41,8 @@ export function GroupTable({ filter, groupName, matches, standings }: GroupTable
         <tbody>
           {standings.map((s, i) => {
             const highlighted = isTeamHighlighted(s.team, filter);
+            const person = getPersonForCountry(s.team);
+
             return (
               <tr
                 className={`border-b border-gray-700/50 ${i < 2 ? 'bg-pitch/20' : ''} ${
@@ -49,7 +51,12 @@ export function GroupTable({ filter, groupName, matches, standings }: GroupTable
                 key={s.team}
               >
                 <td className="py-2">
-                  <TeamName country={s.team} highlightPerson={highlightPerson} />
+                  <div className="flex flex-col items-start gap-0.5">
+                    <span className="font-medium">{s.team}</span>
+                    {person && (
+                      <PersonTag highlighted={highlightPerson === person} name={person} />
+                    )}
+                  </div>
                 </td>
                 <td className="text-center">{s.played}</td>
                 <td className="text-center">{s.won}</td>
@@ -65,28 +72,33 @@ export function GroupTable({ filter, groupName, matches, standings }: GroupTable
         </tbody>
       </table>
 
-      {played.length > 0 && (
-        <div className="mt-3 border-t border-gray-700 pt-3">
-          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
-            Results
-          </h4>
-          <div className="space-y-1">
-            {played.map((m) => (
-              <MatchRow filter={filter} key={m.id} match={m} />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {upcoming.length > 0 && (
-        <div className="mt-3 border-t border-gray-700 pt-3">
-          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
-            Upcoming
-          </h4>
-          <div className="space-y-1">
-            {upcoming.map((m) => (
-              <MatchRow filter={filter} key={m.id} match={m} />
-            ))}
+      {(played.length > 0 || upcoming.length > 0) && (
+        <div className="mt-3 space-y-3 border-t border-gray-700 pt-3">
+          <div className="grid grid-cols-[4.75rem_minmax(0,1fr)_3ch_minmax(0,1fr)] items-center gap-x-1.5 gap-y-1">
+            {played.length > 0 && (
+              <>
+                <h4 className="col-span-4 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                  Results
+                </h4>
+                {played.map((match) => (
+                  <MatchRow filter={filter} key={match.id} match={match} />
+                ))}
+              </>
+            )}
+            {upcoming.length > 0 && (
+              <>
+                <h4
+                  className={`col-span-4 text-xs font-semibold uppercase tracking-wider text-gray-500 ${
+                    played.length > 0 ? 'mt-2' : ''
+                  }`}
+                >
+                  Upcoming
+                </h4>
+                {upcoming.map((match) => (
+                  <MatchRow filter={filter} key={match.id} match={match} />
+                ))}
+              </>
+            )}
           </div>
         </div>
       )}
@@ -94,27 +106,33 @@ export function GroupTable({ filter, groupName, matches, standings }: GroupTable
   );
 }
 
+function formatMatchKickoff(dateStr: string, timeStr: string): string {
+  const date = new Date(dateStr + 'T00:00:00');
+  const dayLabel = date.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    weekday: 'short',
+  });
+  return `${dayLabel} ${timeStr}`;
+}
+
 function MatchRow({ filter, match }: { filter: PersonFilter; match: Match }) {
   const hasScore = match.homeScore != null;
   const highlighted = isMatchHighlighted(match, filter);
-  const highlightPerson = filter.mode === 'highlight' ? filter.person : null;
 
   return (
     <div
-      className={`flex items-center gap-1 rounded text-xs ${
+      className={`col-span-4 grid grid-cols-subgrid items-center rounded text-xs ${
         highlighted ? HIGHLIGHT_CONTAINER_CLASSES : ''
       }`}
     >
-      <span className="w-16 shrink-0 text-gray-500">
-        {formatDate(match.date).replace(/,.*/, '')} {match.time}
+      <span className="whitespace-nowrap tabular-nums text-gray-500">
+        {formatMatchKickoff(match.date, match.time)}
       </span>
-      <span className="flex flex-1 items-center justify-center gap-1 text-center">
-        <TeamName country={match.homeTeam} highlightPerson={highlightPerson} showPerson={false} />
-        <span className="mx-1 font-mono text-gray-300">
-          {hasScore ? `${match.homeScore} - ${match.awayScore}` : 'v'}
-        </span>
-        <TeamName country={match.awayTeam} highlightPerson={highlightPerson} showPerson={false} />
+      <span className="min-w-0 truncate text-right font-medium">{match.homeTeam}</span>
+      <span className="text-center font-mono text-gray-300">
+        {hasScore ? `${match.homeScore}-${match.awayScore}` : '\u00A0v\u00A0'}
       </span>
+      <span className="min-w-0 truncate text-left font-medium">{match.awayTeam}</span>
     </div>
   );
 }
