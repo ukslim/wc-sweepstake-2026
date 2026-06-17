@@ -30,12 +30,10 @@ function CalendarMatchRow({
   highlighted,
   highlightPerson,
   match,
-  showPersonTags,
 }: {
   highlighted: boolean;
   highlightPerson: string | null;
   match: Match;
-  showPersonTags: boolean;
 }) {
   const hasScore = match.homeScore != null;
   const matchPast = isMatchPast(match.date, match.time);
@@ -70,12 +68,12 @@ function CalendarMatchRow({
       <span className="col-start-1 row-start-2 rounded bg-gray-700 px-1 py-0.5 text-center text-[10px] leading-tight text-gray-300">
         {getRoundBadge(match)}
       </span>
-      {!isTbd && showPersonTags && homePerson && (
+      {!isTbd && homePerson && (
         <span className="col-start-2 row-start-2 flex min-w-0 justify-end overflow-hidden">
           <PersonTag highlighted={highlightPerson === homePerson} name={homePerson} />
         </span>
       )}
-      {!isTbd && showPersonTags && awayPerson && (
+      {!isTbd && awayPerson && (
         <span className="col-start-4 row-start-2 min-w-0 overflow-hidden">
           <PersonTag highlighted={highlightPerson === awayPerson} name={awayPerson} />
         </span>
@@ -109,7 +107,6 @@ export function CalendarView({ filter, matches }: CalendarViewProps) {
   }, {});
 
   const highlightPerson = filter.mode === 'highlight' ? filter.person : null;
-  const showPersonTags = !(filter.person && filter.mode === 'filter');
 
   return (
     <div className="space-y-6 lg:max-w-lg">
@@ -133,7 +130,6 @@ export function CalendarView({ filter, matches }: CalendarViewProps) {
                   highlightPerson={highlightPerson}
                   key={match.id}
                   match={match}
-                  showPersonTags={showPersonTags}
                 />
               ))}
             </div>
