@@ -4,6 +4,13 @@ import { calculateStandings } from './standings';
 
 const TBD = 'TBD';
 
+/** Split a knockout description ("Home vs Away") into its two slot tokens. */
+export function knockoutTokens(description?: string): [string, string] {
+  if (!description) return [TBD, TBD];
+  const [home, away] = description.split(' vs ');
+  return [home?.trim() || TBD, away?.trim() || TBD];
+}
+
 interface GroupResult {
   winner: string;
   runnerUp: string;

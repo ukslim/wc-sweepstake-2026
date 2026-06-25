@@ -1,5 +1,6 @@
 import { Match, PersonFilter } from '../../types';
 import { getPersonForCountry, getTeamsForPerson } from '../../data/entrants';
+import { knockoutTokens } from '../../utils/bracket';
 
 interface KnockoutViewProps {
   filter: PersonFilter;
@@ -287,11 +288,14 @@ function MatchCard({
   if (!match) return null;
 
   const hasScore = match.homeScore != null;
-  const isTbd = match.homeTeam === 'TBD';
+  const homeIsTbd = match.homeTeam === 'TBD';
+  const awayIsTbd = match.awayTeam === 'TBD';
+  const [homeToken, awayToken] = knockoutTokens(match.description);
+  const showScores = hasScore && !homeIsTbd && !awayIsTbd;
   const highlightHome =
-    filter.mode === 'highlight' && !isTbd && personTeams.includes(match.homeTeam);
+    filter.mode === 'highlight' && !homeIsTbd && personTeams.includes(match.homeTeam);
   const highlightAway =
-    filter.mode === 'highlight' && !isTbd && personTeams.includes(match.awayTeam);
+    filter.mode === 'highlight' && !awayIsTbd && personTeams.includes(match.awayTeam);
   const highlighted = highlightHome || highlightAway;
 
   return (
@@ -302,26 +306,20 @@ function MatchCard({
       style={{ height: CARD_H }}
     >
       <div className="flex flex-col justify-center px-2" style={{ height: CARD_H }}>
-        {isTbd ? (
-          <div className="truncate text-[10px] text-gray-500">
-            {match.description ?? 'TBD v TBD'}
-          </div>
-        ) : (
-          <>
-            <TeamRow
-              highlight={highlightHome}
-              score={hasScore ? match.homeScore : undefined}
-              team={match.homeTeam}
-              won={hasScore && match.homeScore! > match.awayScore!}
-            />
-            <TeamRow
-              highlight={highlightAway}
-              score={hasScore ? match.awayScore : undefined}
-              team={match.awayTeam}
-              won={hasScore && match.awayScore! > match.homeScore!}
-            />
-          </>
-        )}
+        <TeamRow
+          highlight={highlightHome}
+          placeholder={homeIsTbd}
+          score={showScores ? match.homeScore : undefined}
+          team={homeIsTbd ? homeToken : match.homeTeam}
+          won={showScores && match.homeScore! > match.awayScore!}
+        />
+        <TeamRow
+          highlight={highlightAway}
+          placeholder={awayIsTbd}
+          score={showScores ? match.awayScore : undefined}
+          team={awayIsTbd ? awayToken : match.awayTeam}
+          won={showScores && match.awayScore! > match.homeScore!}
+        />
       </div>
     </div>
   );
@@ -329,19 +327,21 @@ function MatchCard({
 
 function TeamRow({
   highlight,
+  placeholder,
   score,
   team,
   won,
 }: {
   highlight: boolean;
+  placeholder: boolean;
   score: number | undefined;
   team: string;
   won: boolean;
 }) {
-  const person = getPersonForCountry(team);
+  const person = placeholder ? undefined : getPersonForCountry(team);
   return (
     <div
-      className={`flex items-center gap-1 ${highlight ? 'rounded bg-gold/5 px-0.5 text-gold' : ''} ${won ? 'font-bold' : ''}`}
+      className={`flex items-center gap-1 ${highlight ? 'rounded bg-gold/5 px-0.5 text-gold' : ''} ${won ? 'font-bold' : ''} ${placeholder ? 'text-[10px] text-gray-500' : ''}`}
     >
       <span className="flex-1 truncate">{team}</span>
       {person && (

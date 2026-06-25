@@ -1,5 +1,6 @@
 import { Match, PersonFilter } from '../../types';
 import { getPersonForCountry, getTeamsForPerson } from '../../data/entrants';
+import { knockoutTokens } from '../../utils/bracket';
 import { PersonTag } from '../common/PersonTag';
 import { formatDate, isMatchPast, isToday } from '../../utils/dates';
 import { HIGHLIGHT_CONTAINER_CLASSES, isMatchHighlighted } from '../../utils/personHighlight';
@@ -35,11 +36,15 @@ function CalendarMatchRow({
   highlightPerson: string | null;
   match: Match;
 }) {
-  const hasScore = match.homeScore != null;
   const matchPast = isMatchPast(match.date, match.time);
-  const isTbd = match.homeTeam === 'TBD';
-  const homePerson = getPersonForCountry(match.homeTeam);
-  const awayPerson = getPersonForCountry(match.awayTeam);
+  const homeIsTbd = match.homeTeam === 'TBD';
+  const awayIsTbd = match.awayTeam === 'TBD';
+  const [homeToken, awayToken] = knockoutTokens(match.description);
+  const homeLabel = homeIsTbd ? homeToken : match.homeTeam;
+  const awayLabel = awayIsTbd ? awayToken : match.awayTeam;
+  const showScore = match.homeScore != null && !homeIsTbd && !awayIsTbd;
+  const homePerson = homeIsTbd ? undefined : getPersonForCountry(match.homeTeam);
+  const awayPerson = awayIsTbd ? undefined : getPersonForCountry(match.awayTeam);
 
   return (
     <div
@@ -48,32 +53,32 @@ function CalendarMatchRow({
       } ${matchPast ? 'opacity-70' : ''}`}
     >
       <span className="col-start-1 row-start-1 text-xs tabular-nums text-gray-400">{match.time}</span>
-      {isTbd ? (
-        <span className="col-span-3 col-start-2 row-start-1 min-w-0 truncate text-xs text-gray-400 lg:col-span-4">
-          {match.description ?? 'TBD v TBD'}
-        </span>
-      ) : (
-        <>
-          <span className="col-start-2 row-start-1 min-w-0 truncate text-right text-xs font-medium">
-            {match.homeTeam}
-          </span>
-          <span className="col-start-3 row-span-2 row-start-1 shrink-0 self-center px-1 font-mono text-sm font-semibold text-gray-100">
-            {hasScore ? `${match.homeScore}-${match.awayScore}` : 'v'}
-          </span>
-          <span className="col-start-4 row-start-1 min-w-0 truncate text-left text-xs font-medium">
-            {match.awayTeam}
-          </span>
-        </>
-      )}
+      <span
+        className={`col-start-2 row-start-1 min-w-0 truncate text-right text-xs ${
+          homeIsTbd ? 'text-gray-400' : 'font-medium'
+        }`}
+      >
+        {homeLabel}
+      </span>
+      <span className="col-start-3 row-span-2 row-start-1 shrink-0 self-center px-1 font-mono text-sm font-semibold text-gray-100">
+        {showScore ? `${match.homeScore}-${match.awayScore}` : 'v'}
+      </span>
+      <span
+        className={`col-start-4 row-start-1 min-w-0 truncate text-left text-xs ${
+          awayIsTbd ? 'text-gray-400' : 'font-medium'
+        }`}
+      >
+        {awayLabel}
+      </span>
       <span className="col-start-1 row-start-2 rounded bg-gray-700 px-1 py-0.5 text-center text-[10px] leading-tight text-gray-300">
         {getRoundBadge(match)}
       </span>
-      {!isTbd && homePerson && (
+      {homePerson && (
         <span className="col-start-2 row-start-2 flex min-w-0 justify-end overflow-hidden">
           <PersonTag highlighted={highlightPerson === homePerson} name={homePerson} />
         </span>
       )}
-      {!isTbd && awayPerson && (
+      {awayPerson && (
         <span className="col-start-4 row-start-2 min-w-0 overflow-hidden">
           <PersonTag highlighted={highlightPerson === awayPerson} name={awayPerson} />
         </span>
