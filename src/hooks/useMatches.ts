@@ -3,6 +3,7 @@ import { Match } from '../types';
 import { schedule } from '../data/schedule';
 import { useResults } from '../data/resultsStore';
 import { ApiFetchError, fetchMatches } from '../utils/api';
+import { resolveBracket } from '../utils/bracket';
 
 export interface UseMatchesResult {
   apiError: string | null;
@@ -72,7 +73,7 @@ export function useMatches(): UseMatchesResult {
       }
     }
 
-    return schedule.map((match) => {
+    const scored = schedule.map((match) => {
       const injected = resultMap.get(match.id);
       if (injected) {
         return { ...match, awayScore: injected.awayScore, homeScore: injected.homeScore };
@@ -87,6 +88,8 @@ export function useMatches(): UseMatchesResult {
 
       return match;
     });
+
+    return resolveBracket(scored, apiMatches);
   }, [apiMatches, results]);
 
   return { apiError, lastUpdated, loading, matches, scoresPreserved, scoresStale };
