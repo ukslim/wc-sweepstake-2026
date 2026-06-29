@@ -3,7 +3,7 @@ import { Match } from '../types';
 import { schedule } from '../data/schedule';
 import { useResults } from '../data/resultsStore';
 import { ApiFetchError, fetchMatches } from '../utils/api';
-import { resolveBracket } from '../utils/bracket';
+import { knockoutSlotKey, resolveBracket } from '../utils/bracket';
 
 export interface UseMatchesResult {
   apiError: string | null;
@@ -64,6 +64,10 @@ export function useMatches(): UseMatchesResult {
     const resultMap = new Map(results.map((r) => [String(r.matchId), r]));
 
     const apiScoreMap = new Map<string, { awayScore: number; homeScore: number }>();
+    const apiKnockoutMap = new Map<
+      string,
+      Partial<Pick<Match, 'awayScore' | 'awayTeam' | 'homeScore' | 'homeTeam'>>
+    >();
     for (const m of apiMatches) {
       if (m.homeScore != null && m.awayScore != null) {
         apiScoreMap.set(`${m.homeTeam}|${m.date}`, {
@@ -71,12 +75,39 @@ export function useMatches(): UseMatchesResult {
           homeScore: m.homeScore,
         });
       }
+
+      if (m.round !== 'group') {
+        const slot = knockoutSlotKey(m);
+        const slotData = apiKnockoutMap.get(slot) ?? {};
+        if (m.homeScore != null && m.awayScore != null) {
+          slotData.homeScore = m.homeScore;
+          slotData.awayScore = m.awayScore;
+        }
+        if (m.homeTeam && m.homeTeam !== 'TBD') slotData.homeTeam = m.homeTeam;
+        if (m.awayTeam && m.awayTeam !== 'TBD') slotData.awayTeam = m.awayTeam;
+        apiKnockoutMap.set(slot, slotData);
+      }
     }
 
     const scored = schedule.map((match) => {
       const injected = resultMap.get(match.id);
       if (injected) {
         return { ...match, awayScore: injected.awayScore, homeScore: injected.homeScore };
+      }
+
+      if (match.round !== 'group') {
+        const apiKnockout = apiKnockoutMap.get(knockoutSlotKey(match));
+        if (apiKnockout) {
+          return {
+            ...match,
+            ...(apiKnockout.homeScore != null && {
+              awayScore: apiKnockout.awayScore,
+              homeScore: apiKnockout.homeScore,
+            }),
+            ...(apiKnockout.homeTeam && match.homeTeam === 'TBD' && { homeTeam: apiKnockout.homeTeam }),
+            ...(apiKnockout.awayTeam && match.awayTeam === 'TBD' && { awayTeam: apiKnockout.awayTeam }),
+          };
+        }
       }
 
       if (match.homeTeam !== 'TBD') {

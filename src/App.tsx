@@ -10,7 +10,7 @@ import { KnockoutView } from './components/Knockout/KnockoutView';
 import { CalendarView } from './components/Calendar/CalendarView';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<Tab>('groups');
+  const [activeTab, setActiveTab] = useState<Tab>('knockout');
   const { clear, filter, selectPerson, setMode } = usePersonFilter();
   const { apiError, lastUpdated, loading, matches, scoresPreserved, scoresStale } =
     useMatches();

@@ -4,6 +4,11 @@ import { calculateStandings } from './standings';
 
 const TBD = 'TBD';
 
+/** Stable key for matching schedule slots to API knockout fixtures (round + BST kickoff). */
+export function knockoutSlotKey(match: Pick<Match, 'round' | 'date' | 'time'>): string {
+  return `${match.round}|${match.date}|${match.time}`;
+}
+
 /** Split a knockout description ("Home vs Away") into its two slot tokens. */
 export function knockoutTokens(description?: string): [string, string] {
   if (!description) return [TBD, TBD];
@@ -125,13 +130,17 @@ function allocateThirds(
   return allocation;
 }
 
-/** Knockout fixtures from the API, keyed by round|date|time, with real team names. */
-function apiKnockoutOverrides(apiMatches: Match[]): Map<string, { away: string; home: string }> {
-  const map = new Map<string, { away: string; home: string }>();
+/** Knockout fixtures from the API, keyed by slot; partial home/away is kept when only one side is known. */
+function apiKnockoutOverrides(
+  apiMatches: Match[]
+): Map<string, { away?: string; home?: string }> {
+  const map = new Map<string, { away?: string; home?: string }>();
   for (const m of apiMatches) {
     if (m.round === 'group') continue;
-    if (!m.homeTeam || !m.awayTeam || m.homeTeam === TBD || m.awayTeam === TBD) continue;
-    map.set(`${m.round}|${m.date}|${m.time}`, { away: m.awayTeam, home: m.homeTeam });
+    const home = m.homeTeam && m.homeTeam !== TBD ? m.homeTeam : undefined;
+    const away = m.awayTeam && m.awayTeam !== TBD ? m.awayTeam : undefined;
+    if (!home && !away) continue;
+    map.set(knockoutSlotKey(m), { ...(home && { home }), ...(away && { away }) });
   }
   return map;
 }
@@ -193,7 +202,7 @@ export function resolveBracket(matches: Match[], apiMatches: Match[] = []): Matc
       if (match.round === 'group' || !match.description) continue;
 
       const id = Number(match.id);
-      const override = apiOverrides.get(`${match.round}|${match.date}|${match.time}`);
+      const override = apiOverrides.get(knockoutSlotKey(match));
 
       const [homeToken, awayToken] = match.description.split(' vs ');
       const home = override?.home ?? (homeToken ? resolveToken(homeToken, id) : null);
