@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { Match, PersonFilter } from '../../types';
 import { getPersonForCountry, getTeamsForPerson } from '../../data/entrants';
 import { knockoutTokens } from '../../utils/bracket';
@@ -92,6 +93,7 @@ function CalendarMatchRow({
 }
 
 export function CalendarView({ filter, matches }: CalendarViewProps) {
+  const todayRef = useRef<HTMLDivElement>(null);
   const personTeams = filter.person ? getTeamsForPerson(filter.person).map((e) => e.country) : [];
 
   const filtered =
@@ -113,6 +115,10 @@ export function CalendarView({ filter, matches }: CalendarViewProps) {
 
   const highlightPerson = filter.mode === 'highlight' ? filter.person : null;
 
+  useEffect(() => {
+    todayRef.current?.scrollIntoView({ block: 'start' });
+  }, []);
+
   return (
     <div className="space-y-6 lg:max-w-lg">
       {Object.entries(grouped).map(([date, dayMatches]) => {
@@ -120,7 +126,11 @@ export function CalendarView({ filter, matches }: CalendarViewProps) {
         const today = isToday(date);
 
         return (
-          <div key={date}>
+          <div
+            className={today ? 'scroll-mt-28' : undefined}
+            key={date}
+            ref={today ? todayRef : undefined}
+          >
             <h3
               className={`mb-3 text-sm font-bold uppercase tracking-wider ${
                 today ? 'text-gold' : past ? 'text-gray-500' : 'text-gray-300'

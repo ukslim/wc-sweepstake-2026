@@ -45,14 +45,16 @@ export default function App() {
         )}
       </header>
 
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <Tabs activeTab={activeTab} onTabChange={setActiveTab} />
-        <PersonSelector
-          filter={filter}
-          onClear={clear}
-          onModeChange={setMode}
-          onSelect={selectPerson}
-        />
+      <div className="sticky top-0 z-20 -mx-4 mb-6 border-b border-gray-800 bg-gray-900 px-4 pb-4 pt-1">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <Tabs activeTab={activeTab} onTabChange={setActiveTab} />
+          <PersonSelector
+            filter={filter}
+            onClear={clear}
+            onModeChange={setMode}
+            onSelect={selectPerson}
+          />
+        </div>
       </div>
 
       <main>
