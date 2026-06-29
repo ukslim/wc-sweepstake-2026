@@ -7,6 +7,7 @@ import {
   isMatchHighlighted,
   isTeamHighlighted,
 } from '../../utils/personHighlight';
+import { formatMatchKickoff } from '../../utils/dates';
 
 interface GroupTableProps {
   filter: PersonFilter;
@@ -104,15 +105,6 @@ export function GroupTable({ filter, groupName, matches, standings }: GroupTable
       )}
     </div>
   );
-}
-
-function formatMatchKickoff(dateStr: string, timeStr: string): string {
-  const date = new Date(dateStr + 'T00:00:00');
-  const dayLabel = date.toLocaleDateString('en-GB', {
-    day: 'numeric',
-    weekday: 'short',
-  });
-  return `${dayLabel} ${timeStr}`;
 }
 
 function MatchRow({ filter, match }: { filter: PersonFilter; match: Match }) {

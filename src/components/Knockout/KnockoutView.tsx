@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { Match, PersonFilter } from '../../types';
 import { getPersonForCountry, getTeamsForPerson } from '../../data/entrants';
 import { knockoutTokens } from '../../utils/bracket';
+import { formatDate } from '../../utils/dates';
 
 interface KnockoutViewProps {
   filter: PersonFilter;
@@ -297,29 +299,56 @@ function MatchCard({
   const highlightAway =
     filter.mode === 'highlight' && !awayIsTbd && personTeams.includes(match.awayTeam);
   const highlighted = highlightHome || highlightAway;
+  const [kickoffOpen, setKickoffOpen] = useState(false);
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (e.pointerType === 'touch') {
+      setKickoffOpen((open) => !open);
+    }
+  };
 
   return (
     <div
-      className={`rounded border text-xs ${
-        highlighted ? 'border-gold/60 bg-gray-800' : 'border-gray-700 bg-gray-800'
-      }`}
+      className="group relative"
+      onPointerUp={handlePointerUp}
       style={{ height: CARD_H }}
     >
-      <div className="flex flex-col justify-center px-2" style={{ height: CARD_H }}>
-        <TeamRow
-          highlight={highlightHome}
-          placeholder={homeIsTbd}
-          score={showScores ? match.homeScore : undefined}
-          team={homeIsTbd ? homeToken : match.homeTeam}
-          won={showScores && match.homeScore! > match.awayScore!}
-        />
-        <TeamRow
-          highlight={highlightAway}
-          placeholder={awayIsTbd}
-          score={showScores ? match.awayScore : undefined}
-          team={awayIsTbd ? awayToken : match.awayTeam}
-          won={showScores && match.awayScore! > match.homeScore!}
-        />
+      <div
+        className={`rounded border text-xs ${
+          highlighted ? 'border-gold/60 bg-gray-800' : 'border-gray-700 bg-gray-800'
+        }`}
+        style={{ height: CARD_H }}
+      >
+        <div className="flex flex-col justify-center px-2" style={{ height: CARD_H }}>
+          <TeamRow
+            highlight={highlightHome}
+            placeholder={homeIsTbd}
+            score={showScores ? match.homeScore : undefined}
+            team={homeIsTbd ? homeToken : match.homeTeam}
+            won={showScores && match.homeScore! > match.awayScore!}
+          />
+          <TeamRow
+            highlight={highlightAway}
+            placeholder={awayIsTbd}
+            score={showScores ? match.awayScore : undefined}
+            team={awayIsTbd ? awayToken : match.awayTeam}
+            won={showScores && match.awayScore! > match.homeScore!}
+          />
+        </div>
+      </div>
+      <div
+        aria-hidden
+        className={`pointer-events-none absolute inset-0 z-50 items-start justify-center ${
+          kickoffOpen ? 'flex' : 'hidden [@media(hover:hover)]:group-hover:flex'
+        }`}
+      >
+        <span
+          className={`mt-0.5 whitespace-nowrap rounded bg-gray-950/95 px-1.5 py-0.5 text-[9px] font-medium tabular-nums text-gray-200 shadow-md ring-1 ring-gray-600/80 transition-opacity duration-150 [@media(hover:hover)]:group-hover:opacity-100 ${
+            kickoffOpen ? 'opacity-100' : 'opacity-0'
+          }`}
+        >
+          {formatDate(match.date)}, {match.time}
+        </span>
       </div>
     </div>
   );

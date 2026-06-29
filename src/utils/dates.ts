@@ -19,6 +19,16 @@ export function formatDate(dateStr: string): string {
   });
 }
 
+/** Format a match kick-off for compact display (weekday, day, time). */
+export function formatMatchKickoff(dateStr: string, timeStr: string): string {
+  const date = new Date(dateStr + 'T00:00:00');
+  const dayLabel = date.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    weekday: 'short',
+  });
+  return `${dayLabel} ${timeStr}`;
+}
+
 /** Check if a match date is in the past. */
 export function isMatchPast(dateStr: string, timeStr: string): boolean {
   const matchDate = new Date(`${dateStr}T${timeStr}:00+01:00`);
